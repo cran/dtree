@@ -1,0 +1,17 @@
+c08827e319456d40b099117e05508372 *DESCRIPTION
+6c4ec78e39fd7fbb177fca4ca1fcfbc7 *NAMESPACE
+ca527bb2991088e200fe3395494fdf88 *R/bump_ret.R
+d5b2d130c941ed0f2eb7d2d75d0df522 *R/ctreePrune.R
+b73d5d5234dd6214d17867c5cc31941f *R/ctreePrune_ret.R
+a46030fc5d49a817c90c50c008acd97c *R/ctree_ret.R
+e1d51ff2572792ee9a7d5b8e5dba85a9 *R/ctree_table.R
+fe74aa6d4db581bae034c74223b67f68 *R/dtree.R
+30e0b29d77f20603965944d9b6fe0536 *R/evtree_ret.R
+301762a4f284c1c7a911605c5805a62e *R/lm_ret.R
+b7d600f89bc5456a81c967332b9b719c *R/rf_ret.R
+4ba6c0d3f2c594f5b61948f01062edff *R/rpart_ret.R
+5e4a1d868e508dc56c311d084c768a77 *R/stable.R
+8f62e101f92ca1dc36b2934ddb0eebd7 *R/summary.R
+d064bd385a30a85d23720917ec5220c9 *man/dtree.Rd
+78045584fa5d65b3b0ee17c8e1d618dd *man/stable.Rd
+d3680da0609ac76c433c3ddedf93c77b *man/summary.dtree.Rd
