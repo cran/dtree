@@ -55,15 +55,20 @@ dtree = function(formula,
     stop("weights are currently not implemented")
   }
 
+
+
   ret <- list()
   if(length(tuneLength)==1){
-    tune.rpart <- tune.ctree <- tune.evtree <- tune.rf <- tuneLength
+    tune.rpart <- tune.ctree <- tune.evtree <- tune.rf <- tune.ctreePrune <- tuneLength
   }else{
     if(any(methods=="rpart")){
       tune.rpart <- tuneLength[methods=="rpart"]
     }
     if(any(methods=="ctree")){
       tune.ctree <- tuneLength[methods=="ctree"]
+    }
+    if(any(methods=="ctreePrune")){
+      tune.ctreePrune <- tuneLength[methods=="ctreePrune"]
     }
     if(any(methods=="evtree")){
       tune.evtree <- tuneLength[methods=="evtree"]
@@ -98,6 +103,7 @@ dtree = function(formula,
 
   class.response <- class(data.train[,response])
 
+
   if(class.response == "numeric" | class.response == "integer"){
     return.matrix <- matrix(NA,length(methods),7)
     rownames(return.matrix) <- methods
@@ -105,12 +111,23 @@ dtree = function(formula,
                                  "rsq.samp","rmse.test","rsq.test")
     Metric="RMSE"
   }else{
-    return.matrix <- matrix(NA,length(methods),7)
-    rownames(return.matrix) <- methods
-    colnames(return.matrix) <- c("nodes","nvar","nsplits","auc.samp",
-                                 "accuracy.samp","auc.test","accuracy.test")
 
-    Metric="ROC"
+    if(length(unique(data.train[,response]))==2){
+      return.matrix <- matrix(NA,length(methods),7)
+      rownames(return.matrix) <- methods
+      colnames(return.matrix) <- c("nodes","nvar","nsplits","auc.samp",
+                                   "accuracy.samp","auc.test","accuracy.test")
+
+      Metric="ROC"
+    }else{
+      return.matrix <- matrix(NA,length(methods),7)
+      rownames(return.matrix) <- methods
+      colnames(return.matrix) <- c("nodes","nvar","nsplits","auc.samp",
+                                   "accuracy.samp","auc.test","accuracy.test")
+
+      Metric="Accuracy"
+    }
+
 
   }
 
@@ -239,7 +256,7 @@ dtree = function(formula,
    # print(formula)
     #print(formula2)
     #ret77 <- do.call(partykit::ctree,list(formula=medv~., data=Boston))
-    ret7 <- ctreePrune_ret(formula,data.train,data.test,class.response,subset,response)
+    ret7 <- ctreePrune_ret(formula,data.train,data.test,class.response,subset,response,tune.ctreePrune,Metric)
     return.matrix["ctreePrune",] <- ret7$vec
     ret$ctreePrune.out <- ret7$ctreePrune.ret
     ret$ctreePrune.splits <- ret7$return.splits

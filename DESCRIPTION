@@ -1,7 +1,7 @@
 Package: dtree
 Type: Package
 Title: Decision Trees
-Version: 0.2.3
+Version: 0.4.2
 Author: Ross Jacobucci
 Maintainer: Ross Jacobucci <rcjacobuc@gmail.com>
 Description: Combines various decision tree algorithms, plus both
@@ -17,6 +17,6 @@ Depends: rpart, party, evtree, partykit, caret
 Suggests: randomForest, tree, MASS, ISLR, matrixStats, plyr,
         rpart.utils, stringr, pROC
 NeedsCompilation: no
-Packaged: 2017-04-20 00:08:39 UTC; RJacobucci
+Packaged: 2018-01-18 22:45:41 UTC; rjacobuc
 Repository: CRAN
-Date/Publication: 2017-04-20 15:06:11 UTC
+Date/Publication: 2018-01-18 23:57:29 UTC

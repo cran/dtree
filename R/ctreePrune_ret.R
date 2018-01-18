@@ -1,5 +1,5 @@
 
-ctreePrune_ret <- function(formula,data.train,data.test,class.response,subset,response){
+ctreePrune_ret <- function(formula,data.train,data.test,class.response,subset,response,tune.ctreePrune,Metric){
 
 
   ret <- list()
@@ -15,9 +15,67 @@ ctreePrune_ret <- function(formula,data.train,data.test,class.response,subset,re
 
   }
 
+  if(tune.ctreePrune > 3){
+    stop("can't use more than 3 values for ctreePrune")
+  }
+
+  possible.tune <- c(.05,.01,.001)
+  tune <- possible.tune[1:tune.ctreePrune]
+
+  out.list <- list()
+
+  met1 <- matrix(NA,20,tune.ctreePrune)
+  met2 <- matrix(NA,20,tune.ctreePrune)
+
+  for(j in 1:tune.ctreePrune){
 
 
-  out <- ctreePrune(formula=formula, data=data.train)
+    for(i in 1:20){
+      set.seed(i)
+
+      ids1 <- sample(nrow(data.train),nrow(data.train),replace=TRUE)
+
+      train <- data.train[ids1,]
+      test <- data.train[-ids1,]
+
+      tt <- ctreePrune(formula=formula, data=train,qstar=tune[j])
+
+      if(class.response == "numeric" | class.response == "integer"){
+        met1[i,j] <- sqrt(mean((test[,response] - predict(tt$tree,test))^2))
+        pp = predict(tt$tree,test)
+        if(sd(pp)==0) pp <- pp+rnorm(length(pp),0,.000001)
+        met2[i,j] <- (cor(test[,response],pp))**2
+      }else{
+        if(all(duplicated(test[,response])[-1L])){
+          met1[i,j] <- NA
+        }else{
+          if(length(unique(data.train[,response])) == 2){
+            met1[i,j] <- pROC::auc(test[,response],predict(tt$tree,test,type="prob")[,1])
+          }
+
+        }
+        met2[i,j] <- caret::confusionMatrix(test[,response],predict(tt$tree,test))$overall["Accuracy"]
+      }
+
+    }
+
+  }
+
+
+    if(Metric=="RMSE" ){
+      loc = which(colMeans(met1) == min(colMeans(met1)))
+      best.tune <- tune[loc]
+    }else if(Metric=="ROC"){
+      loc = which(colMeans(met1) == max(colMeans(met1)))
+      best.tune <- tune[loc]
+    }else if(Metric=="Accuracy"){
+      loc = which(colMeans(met2) == max(colMeans(met2)))
+      best.tune <- tune[loc]
+    }
+
+
+
+  out <- ctreePrune(formula=formula, data=train,qstar=best.tune)
   ctreePrune.out <- ctreePrune.ret <- out$tree
 
   #min.error <- which(min(cp[,"xerror"]) == cp[,"xerror"])[1]
@@ -89,34 +147,6 @@ ctreePrune_ret <- function(formula,data.train,data.test,class.response,subset,re
 
   return.matrix[1,"nodes"] <- length(unique(fitted(ctreePrune.out)[,1]))
 
-  met1 <- rep(NA,20)
-  met2 <- rep(NA,20)
-  for(i in 1:20){
-    set.seed(i)
-
-    ids1 <- sample(nrow(data.train),nrow(data.train),replace=TRUE)
-
-    train <- data.train[ids1,]
-    test <- data.train[-ids1,]
-
-    tt <- ctreePrune(formula=formula, data=train)
-
-    if(class.response == "numeric" | class.response == "integer"){
-      met1[i] <- sqrt(mean((test[,response] - predict(tt$tree,test))^2))
-      pp = predict(tt$tree,test)
-       if(sd(pp)==0) pp <- pp+rnorm(length(pp),0,.000001)
-      met2[i] <- (cor(test[,response],pp))**2
-    }else{
-      if(all(duplicated(test[,response])[-1L])){
-        met1[i] <- NA
-      }else{
-        met1[i] <- pROC::auc(test[,response],predict(tt$tree,test,type="prob")[,1])
-      }
-      met2[i] <- caret::confusionMatrix(test[,response],predict(tt$tree,test))$overall["Accuracy"]
-      }
-
-  }
-
 
 
 
@@ -125,8 +155,8 @@ ctreePrune_ret <- function(formula,data.train,data.test,class.response,subset,re
     #which(train.out$results[,"cp"] == train.out$bestTune)
 
     #return.matrix[1,"rmse.samp"] <- train.out$results[ind,"RMSE"]
-    return.matrix[1,"rmse.samp"] <- mean(met1) #sqrt(mean((data.train[,response] - predict(ctreePrune.out))^2))
-    return.matrix[1,"rsq.samp"] <- mean(met2) #(cor(data.train[,response],predict(ctreePrune.out)))**2
+    return.matrix[1,"rmse.samp"] <- mean(met1[,loc])
+    return.matrix[1,"rsq.samp"] <- mean(met2[,loc])
    #return.matrix[1,"rsq.samp"] <- train.out$results[ind,"Rsquared"]
 
     if(subset==FALSE){
@@ -137,14 +167,19 @@ ctreePrune_ret <- function(formula,data.train,data.test,class.response,subset,re
       return.matrix[1,"rsq.test"] <- (cor(data.test[,response],predict(ctreePrune.out,data.test)))**2
     }
   }else{
-    return.matrix[1,"auc.samp"] <- mean(met1,na.rm=TRUE)#pROC::auc(data.train[,response],predict(ctreePrune.out,type="prob")[,1])
-    return.matrix[1,"accuracy.samp"] <- mean(met2)#caret::confusionMatrix(data.train[,response],predict(ctreePrune.out))$overall["Accuracy"]
+    if(length(unique(data.train[,response])) == 2){
+      return.matrix[1,"auc.samp"] <- mean(met1[,loc],na.rm=TRUE)#pROC::auc(data.train[,response],predict(ctreePrune.out,type="prob")[,1])
+      return.matrix[1,"accuracy.samp"] <- mean(met2[,loc])#caret::confusionMatrix(data.train[,response],predict(ctreePrune.out))$overall["Accuracy"]
 
-    if(subset==FALSE){
-     # return.matrix[1,"auc.test"] <- NA
+      if(subset==FALSE){
+        # return.matrix[1,"auc.test"] <- NA
+      }else{
+        #  return.matrix[1,"auc.test"] <- NA
+      }
     }else{
-    #  return.matrix[1,"auc.test"] <- NA
+      return.matrix[1,"accuracy.samp"] <- mean(met2[,loc])
     }
+
   }
 
 
